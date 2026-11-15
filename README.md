@@ -7,6 +7,7 @@
   </div>
 
 <h3 align="center">Clone completo do Uber</h3>
+<p align="center">Desenvolvido por <a href="https://github.com/gmontinny">Giovanny Montinny</a>.</p>
 </div>
 
 ## 📋 <a name="table">Sumário</a>
@@ -85,11 +86,11 @@ Verifique se os seguintes programas estão instalados no seu computador:
 
 **Clonar o repositório**
 
-Substitua `URL_DO_REPOSITORIO` pelo endereço Git deste projeto.
+Repositório: [gmontinny/react-native-uber](https://github.com/gmontinny/react-native-uber).
 
 ```bash
-git clone URL_DO_REPOSITORIO uber
-cd uber
+git clone https://github.com/gmontinny/react-native-uber.git
+cd react-native-uber
 ```
 
 **Instalação**
