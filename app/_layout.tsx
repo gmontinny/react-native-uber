@@ -23,6 +23,18 @@ if (!publishableKey) {
 
 LogBox.ignoreLogs(["Clerk:"]);
 
+// Suppress Clerk popup postMessage error on web
+if (typeof window !== "undefined") {
+  const originalOnUnhandledRejection = window.onunhandledrejection;
+  window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+    if (event?.reason?.message?.includes("Cannot read properties of undefined")) {
+      event.preventDefault();
+      return;
+    }
+    if (originalOnUnhandledRejection) originalOnUnhandledRejection.call(window, event);
+  };
+}
+
 export default function RootLayout() {
   const [loaded] = useFonts({
     "Jakarta-Bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),

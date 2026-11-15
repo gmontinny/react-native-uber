@@ -1,12 +1,10 @@
 import React from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
-import { useFetch } from "@/lib/fetch";
-import { calculateRegion } from "@/lib/map";
 import { useLocationStore } from "@/store";
-import { Driver } from "@/types/type";
 
-const mapsApiKey = process.env.EXPO_PUBLIC_PLACES_API_KEY;
+// Only use Google when a key configured for Maps Embed API is provided.
+const mapsEmbedApiKey = process.env.EXPO_PUBLIC_MAPS_EMBED_API_KEY;
 
 const Map = () => {
   const {
@@ -16,45 +14,58 @@ const Map = () => {
     destinationLongitude,
   } = useLocationStore();
 
-  const { loading, error } = useFetch<Driver[]>("/(api)/driver");
-
-  if (loading || (!userLatitude && !userLongitude))
+  if (userLatitude == null || userLongitude == null) {
     return (
-      <View className="flex justify-center items-center w-full h-full">
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="small" color="#000" />
       </View>
     );
+  }
 
-  if (error)
-    return (
-      <View className="flex justify-center items-center w-full h-full">
-        <Text>Erro: {error}</Text>
-      </View>
-    );
-
-  const region = calculateRegion({
-    userLatitude,
-    userLongitude,
-    destinationLatitude,
-    destinationLongitude,
-  });
-
-  const lat = region.latitude;
-  const lng = region.longitude;
-  const zoom = destinationLatitude ? 12 : 14;
-
-  const src = mapsApiKey
-    ? `https://www.google.com/maps/embed/v1/view?key=${mapsApiKey}&center=${lat},${lng}&zoom=${zoom}`
-    : `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.05},${lat - 0.05},${lng + 0.05},${lat + 0.05}&layer=mapnik`;
+  const hasDestination =
+    destinationLatitude != null && destinationLongitude != null;
+  const latitude = hasDestination
+    ? (userLatitude + destinationLatitude) / 2
+    : userLatitude;
+  const longitude = hasDestination
+    ? (userLongitude + destinationLongitude) / 2
+    : userLongitude;
+  const latitudePadding = hasDestination
+    ? Math.max(Math.abs(userLatitude - destinationLatitude) * 0.65, 0.01)
+    : 0.01;
+  const longitudePadding = hasDestination
+    ? Math.max(Math.abs(userLongitude - destinationLongitude) * 0.65, 0.01)
+    : 0.01;
+  const bbox = [
+    Math.max(-180, longitude - longitudePadding),
+    Math.max(-85, latitude - latitudePadding),
+    Math.min(180, longitude + longitudePadding),
+    Math.min(85, latitude + latitudePadding),
+  ].join(",");
+  const marker = `${userLatitude},${userLongitude}`;
+  const mapSrc = mapsEmbedApiKey
+    ? `https://www.google.com/maps/embed/v1/view?key=${encodeURIComponent(mapsEmbedApiKey)}&center=${latitude},${longitude}&zoom=${hasDestination ? 12 : 14}`
+    : `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(marker)}`;
 
   return (
-    <View style={{ flex: 1, width: "100%", height: "100%" }}>
+    <View
+      style={{
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
       <iframe
-        src={src}
-        style={{ width: "100%", height: "100%", border: "none", borderRadius: 16 }}
+        src={mapSrc}
+        width="100%"
+        height="100%"
+        style={{ border: "none", display: "block" }}
         allowFullScreen
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
+        title="Mapa da sua localização"
       />
     </View>
   );
