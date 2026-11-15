@@ -1,8 +1,8 @@
-import { neon } from "@neondatabase/serverless";
+import { getDatabase } from "@/lib/database";
 
 export async function GET(request: Request) {
   try {
-    const sql = neon(`${process.env.DATABASE_URL}`);
+    const sql = getDatabase();
     const response = await sql`SELECT * FROM drivers`;
 
     return Response.json({ data: response });

@@ -1,0 +1,12 @@
+node_modules
+.expo
+.git
+.idea
+.vscode
+dist
+web-build
+.env
+.env.*
+!.env.example
+*.log
+uber_assets.zip

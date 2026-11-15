@@ -2,9 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 
 export const fetchAPI = async (url: string, options?: RequestInit) => {
   try {
-    const response = await fetch(url, options);
+    const apiPath = url.replace(/\/\([^/]+\)/g, "");
+    const serverUrl = process.env.EXPO_PUBLIC_SERVER_URL;
+    const requestUrl = serverUrl
+      ? new URL(apiPath, serverUrl).toString()
+      : apiPath;
+    const response = await fetch(requestUrl, options);
     if (!response.ok) {
-      new Error(`Erro HTTP! Status: ${response.status}`);
+      throw new Error(`Erro HTTP! Status: ${response.status}`);
     }
     return await response.json();
   } catch (error) {

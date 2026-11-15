@@ -1,8 +1,17 @@
 import { Stripe } from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export async function POST(request: Request) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return Response.json(
+      {
+        error:
+          "Configure STRIPE_SECRET_KEY no arquivo .env para testar pagamentos.",
+      },
+      { status: 503 },
+    );
+  }
+  const stripe = new Stripe(secretKey);
   try {
     const body = await request.json();
     const { payment_method_id, payment_intent_id, customer_id, client_secret } =

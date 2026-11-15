@@ -21,3 +21,6 @@ expo-env.d.ts
 
 # Variáveis de ambiente
 .env
+
+.env.*
+!.env.example

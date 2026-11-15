@@ -19,6 +19,9 @@
 5. 🕸️ [Trechos de código para copiar](#snippets)
 6. 🖇️ [Links](#links)
 7. 📦 [Recursos visuais](#assets)
+8. 🐳 [Ambiente local com Docker](docs/docker.md)
+9. 💻 [Desenvolvimento local](docs/local.md)
+10. 🔑 [Configurar Clerk, Stripe, Neon e Geoapify](docs/servicos-externos.md)
 
 ## <a name="introduction">🤖 Introdução</a>
 
@@ -103,36 +106,35 @@ npm install
 
 **Configurar as variáveis de ambiente**
 
-Crie um arquivo chamado `.env` na raiz do projeto e adicione o seguinte conteúdo:
+Copie o modelo de configuração para um arquivo local, preservando seu arquivo caso já exista:
 
-```env
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=
-
-EXPO_PUBLIC_PLACES_API_KEY=
-EXPO_PUBLIC_DIRECTIONS_API_KEY=
-
-DATABASE_URL=
-
-EXPO_PUBLIC_SERVER_URL=https://uber.dev/
-
-EXPO_PUBLIC_GEOAPIFY_API_KEY=
-
-EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_SECRET_KEY=
+```powershell
+Copy-Item .env.example .env
 ```
 
-Preencha os valores com suas credenciais do Clerk, Stripe, NeonDB, Google Maps e Geoapify. Você pode obter essas
-credenciais criando uma conta nos respectivos sites:
-[Clerk](https://clerk.com/), [Stripe](https://stripe.com/in), [NeonDB](https://neon.tech/), [Google Maps](https://console.cloud.google.com/)
-e [Geoapify](https://www.geoapify.com/).
+Preencha as chaves dos serviços externos no arquivo .env. O aplicativo e a API
+rodam localmente na porta 8081; não é necessário publicar em um domínio externo.
+Consulte o [guia de desenvolvimento local](docs/local.md) para configurar Clerk,
+Stripe, NeonDB ou PostgreSQL local, Google Maps e Geoapify.
 
-**Executar o projeto**
+**Executar o projeto com banco local**
 
 ```bash
-npx expo start
+docker compose up -d db
+npm run check:env
+npm start
 ```
 
-Baixe o aplicativo [Expo Go](https://expo.dev/go) e leia o código QR com seu dispositivo para visualizar o projeto.
+Para usar Neon, configure o driver e a URL no .env e execute apenas os comandos npm.
+Para testar em um celular na mesma rede, siga as instruções do guia e use
+npm run start:lan. O aplicativo completo requer uma compilação de desenvolvimento
+com os módulos nativos de mapas e pagamentos.
+
+## 🐳 Ambiente local com Docker
+
+O projeto inclui Dockerfile, Docker Compose, PostgreSQL com inicialização automática
+e Adminer opcional. Consulte o [guia do ambiente Docker](docs/docker.md) para configurar
+as variáveis, iniciar os serviços e conectar um celular.
 
 ## <a name="snippets">🕸️ Trechos de código</a>
 
@@ -771,9 +773,14 @@ import { useState, useEffect, useCallback } from "react";
 
 export const fetchAPI = async (url: string, options?: RequestInit) => {
   try {
-    const response = await fetch(url, options);
+    const apiPath = url.replace(/\/\([^/]+\)/g, "");
+    const serverUrl = process.env.EXPO_PUBLIC_SERVER_URL;
+    const requestUrl = serverUrl
+      ? new URL(apiPath, serverUrl).toString()
+      : apiPath;
+    const response = await fetch(requestUrl, options);
     if (!response.ok) {
-      new Error(`Erro HTTP! Status: ${response.status}`);
+      throw new Error(`Erro HTTP! Status: ${response.status}`);
     }
     return await response.json();
   } catch (error) {
@@ -1279,7 +1286,7 @@ CREATE TABLE users (
 <summary><code>(api)/ride/create+api.ts</code></summary>
 
 ```ts
-import { neon } from "@neondatabase/serverless";
+import { getDatabase } from "@/lib/database";
 
 export async function POST(request: Request) {
   try {
@@ -1317,7 +1324,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const sql = neon(`${process.env.DATABASE_URL}`);
+    const sql = getDatabase();
 
     const response = await sql`
       INSERT INTO rides ( 
@@ -1365,7 +1372,7 @@ export async function POST(request: Request) {
 <summary><code>(api)/ride/[id]+api.ts</code></summary>
 
 ```ts
-import { neon } from "@neondatabase/serverless";
+import { getDatabase } from "@/lib/database";
 
 export async function GET(request: Request, { id }: { id: string }) {
   if (!id)
@@ -1375,7 +1382,7 @@ export async function GET(request: Request, { id }: { id: string }) {
     );
 
   try {
-    const sql = neon(`${process.env.DATABASE_URL}`);
+    const sql = getDatabase();
     const response = await sql`
         SELECT
             rides.ride_id,

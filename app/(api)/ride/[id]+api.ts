@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { getDatabase } from "@/lib/database";
 
 export async function GET(request: Request, { id }: { id: string }) {
   if (!id)
@@ -8,7 +8,7 @@ export async function GET(request: Request, { id }: { id: string }) {
     );
 
   try {
-    const sql = neon(`${process.env.DATABASE_URL}`);
+    const sql = getDatabase();
     const response = await sql`
         SELECT
             rides.ride_id,
