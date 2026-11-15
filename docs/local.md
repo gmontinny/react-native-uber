@@ -1,6 +1,6 @@
 # Desenvolvimento local
 
-Para habilitar as integrações, siga o [guia de configuração de Clerk, Stripe, Neon e Geoapify](servicos-externos.md).
+Para habilitar as integrações, siga o [guia de configuração de Clerk, Stripe, Neon, Geoapify e Google Maps](servicos-externos.md).
 
 O aplicativo e as rotas da API são executados no computador, pelo Expo na porta 8081. Não é necessário publicar um site, configurar hospedagem ou abrir um túnel.
 Clerk, Stripe, NeonDB (opcional), Google Maps e Geoapify continuam sendo serviços

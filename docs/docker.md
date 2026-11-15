@@ -1,6 +1,6 @@
 # Ambiente local com Docker
 
-Para habilitar as integrações, siga o [guia de configuração de Clerk, Stripe, Neon e Geoapify](servicos-externos.md).
+Para habilitar as integrações, siga o [guia de configuração de Clerk, Stripe, Neon, Geoapify e Google Maps](servicos-externos.md).
 
 Projeto desenvolvido por [Giovanny Montinny](https://github.com/gmontinny).
 

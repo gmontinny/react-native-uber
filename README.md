@@ -21,7 +21,7 @@
 7. 📦 [Recursos visuais](#assets)
 8. 🐳 [Ambiente local com Docker](docs/docker.md)
 9. 💻 [Desenvolvimento local](docs/local.md)
-10. 🔑 [Configurar Clerk, Stripe, Neon e Geoapify](docs/servicos-externos.md)
+10. 🔑 [Configurar Clerk, Stripe, Neon, Geoapify e Google Maps](docs/servicos-externos.md)
 
 ## <a name="introduction">🤖 Introdução</a>
 

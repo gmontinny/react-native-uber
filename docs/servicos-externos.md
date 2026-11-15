@@ -1,4 +1,4 @@
-# Configuração de Clerk, Stripe, Neon e Geoapify
+# Configuração de Clerk, Stripe, Neon, Geoapify e Google Maps
 
 Projeto desenvolvido por [Giovanny Montinny](https://github.com/gmontinny).
 
@@ -298,7 +298,184 @@ Se necessário, teste a Static Maps API pelo explorador da documentação oficia
 com coordenadas conhecidas e sua chave. Respostas `401` ou `403` normalmente
 indicam problemas de autenticação ou restrições; `429` indica limitação de requisições.
 
-## 6. Conferir e iniciar o ambiente
+## 6. Google Places e Directions: criar e configurar as chaves
+
+Painel: [Google Cloud Console](https://console.cloud.google.com/).
+Biblioteca de APIs: [APIs e serviços → Biblioteca](https://console.cloud.google.com/apis/library).
+Credenciais: [APIs e serviços → Credenciais](https://console.cloud.google.com/apis/credentials).
+
+### Etapa 1: criar ou selecionar um projeto
+
+1. Entre no Google Cloud Console com sua conta Google.
+2. No seletor de projetos, na parte superior, clique em **Novo projeto**.
+3. Informe um nome, por exemplo, `react-native-uber`, e conclua a criação.
+4. Selecione esse projeto antes de continuar. As APIs, as chaves e o faturamento
+   das etapas seguintes precisam pertencer a ele.
+
+Se já tiver um projeto apropriado, você pode selecioná-lo em vez de criar outro.
+Não é necessário publicar o aplicativo nem informar um domínio público para usar
+as APIs durante o desenvolvimento local.
+
+### Etapa 2: vincular uma conta de faturamento
+
+1. No menu do Console, abra **Faturamento**.
+2. Crie ou selecione uma conta de faturamento e vincule-a ao projeto.
+3. Preencha os dados solicitados pelo Google, incluindo a forma de pagamento
+   quando exigida.
+4. Confirme se o faturamento está ativo para o projeto selecionado.
+
+As APIs do Google Maps Platform normalmente exigem faturamento habilitado, mesmo
+quando o uso está dentro de uma franquia gratuita. Os limites e preços variam por
+API. Consulte a [página de preços do Google Maps Platform](https://developers.google.com/maps/billing-and-pricing/pricing).
+Se não quiser habilitar faturamento neste momento, deixe essas chaves pendentes;
+a busca de endereços e o cálculo de rotas ainda não poderão ser testados.
+
+### Etapa 3: conferir a compatibilidade das APIs
+
+O código atual utiliza a biblioteca `react-native-google-places-autocomplete`
+para Places e o endpoint `/maps/api/directions/json` para Directions. A exibição
+da rota também utiliza `react-native-maps-directions`. Essas integrações usam
+serviços legados, que podem não estar disponíveis para novos clientes.
+
+Antes de criar as chaves, pesquise na Biblioteca por:
+
+| Serviço usado pelo código atual            | Nome a procurar                                                |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| Sugestões de endereços e detalhes do local | **Places API**, que pode aparecer como **Places API (Legacy)** |
+| Rotas e duração das corridas               | **Directions API**, que pode aparecer como serviço legado      |
+
+Se o seu projeto tiver acesso a esses serviços, habilite-os na próxima etapa.
+Se apenas **Places API (New)** e **Routes API** estiverem disponíveis, pare a
+configuração das integrações legadas: será necessário adaptar o código para
+essas APIs. Habilitar as APIs novas com as mesmas chaves não torna os endpoints
+atuais compatíveis automaticamente.
+
+Consulte a [documentação de produtos legados do Google Maps](https://developers.google.com/maps/legacy)
+para confirmar a disponibilidade na sua conta. Se o painel indicar acesso negado
+ou indisponibilidade para novos clientes, registre a mensagem sem incluir chaves.
+
+### Etapa 4: habilitar Places e Directions
+
+No projeto que tenha acesso às APIs utilizadas pelo código:
+
+1. Abra **APIs e serviços → Biblioteca**.
+2. Pesquise **Places API** e abra a página correspondente ao serviço legado.
+3. Clique em **Ativar**. Se já estiver ativa, o painel exibirá opções de gerenciamento.
+4. Volte à Biblioteca, pesquise **Directions API** e clique em **Ativar**.
+5. Abra **APIs e serviços → APIs e serviços ativados** e confirme os dois serviços.
+
+Ativar somente **Maps SDK for Android**, **Maps SDK for iOS** ou **Maps JavaScript API**
+não habilita a busca Places nem as requisições Directions feitas pelo projeto.
+A configuração desses SDKs de exibição de mapas é separada e depende da plataforma.
+
+### Etapa 5: criar a chave do Places
+
+1. Abra **APIs e serviços → Credenciais**.
+2. Clique em **Criar credenciais → Chave de API**.
+3. Abra a chave criada para editar suas configurações.
+4. Renomeie-a para algo como `uber-places-desenvolvimento`.
+5. Em **Restrições de API**, escolha **Restringir chave**.
+6. Selecione **Places API**, correspondente ao serviço ativado na etapa anterior.
+7. Salve e copie a chave para `EXPO_PUBLIC_PLACES_API_KEY` no `.env`.
+
+### Etapa 6: criar a chave do Directions
+
+1. Ainda em **Credenciais**, crie outra **Chave de API**.
+2. Renomeie-a para `uber-directions-desenvolvimento`.
+3. Em **Restrições de API**, escolha **Restringir chave**.
+4. Selecione **Directions API** e salve.
+5. Copie a chave para `EXPO_PUBLIC_DIRECTIONS_API_KEY` no `.env`.
+
+É possível usar uma única chave permitindo as duas APIs, mas chaves separadas
+facilitam a configuração e a rotação de cada integração.
+Não é necessário criar uma conta de serviço nem baixar um arquivo JSON para essas
+chamadas. As credenciais OAuth do login Google no Clerk são outra configuração.
+
+### Etapa 7: escolher restrições de aplicação compatíveis
+
+O campo **Restrições de aplicação** é diferente de **Restrições de API**.
+O projeto atual faz chamadas HTTP aos serviços Places e Directions diretamente
+pelo aplicativo. Isso limita os tipos de restrição compatíveis com essas chamadas.
+
+- Restrições de **sites/referenciadores HTTP** não correspondem automaticamente
+  às chamadas de um aplicativo nativo.
+- Restrições de **aplicativos Android ou iOS** exigem mecanismos de identificação
+  compatíveis com a API e a biblioteca utilizadas; não basta selecionar esse tipo
+  de restrição para proteger qualquer chamada HTTP.
+- Restrições por **endereço IP** se aplicam a um IP de saída estável, normalmente
+  de um servidor. O IP privado `192.168.x.x` do celular ou do computador não é
+  o endereço público visto pelo Google.
+
+Para um teste local inicial com as chamadas atuais, pode ser necessário selecionar
+**Nenhuma** em restrições de aplicação, mantendo a chave restrita às APIs necessárias.
+Essa chave continua exposta no aplicativo por usar `EXPO_PUBLIC_`; combine esse teste
+com cotas baixas e acompanhe o consumo. Não trate essa configuração como proteção
+adequada para distribuir o aplicativo. Antes de distribuição, revise a integração
+para usar os SDKs apropriados ou chamadas intermediadas pelo servidor, com as
+restrições recomendadas para cada serviço.
+
+As orientações oficiais estão em [segurança de chaves do Google Maps Platform](https://developers.google.com/maps/api-security-best-practices).
+
+### Etapa 8: preencher o arquivo local
+
+Edite somente os dois campos abaixo no `.env`, preservando as outras credenciais:
+
+```env
+EXPO_PUBLIC_PLACES_API_KEY=SUBSTITUA_PELA_CHAVE_DO_PLACES
+EXPO_PUBLIC_DIRECTIONS_API_KEY=SUBSTITUA_PELA_CHAVE_DO_DIRECTIONS
+```
+
+Não coloque os valores reais no `.env.example` ou na documentação.
+As alterações de chave e restrições no painel podem levar alguns minutos para
+entrar em vigor. Reinicie o Expo para carregar o arquivo atualizado:
+
+```bash
+npm run check:env
+npm start -- --clear
+```
+
+Para acesso por celular na rede local, use `npm run start:lan -- --clear`.
+Se a aplicação estiver no Docker, recrie o serviço com
+`docker compose up -d --force-recreate app`.
+
+### Etapa 9: configurar cotas e orçamento
+
+1. Abra a página de cada API ativada e procure **Cotas** ou **Cotas e limites do sistema**.
+2. Defina limites de requisições adequados para o desenvolvimento, nos campos que
+   permitirem edição.
+3. Em **Faturamento → Orçamentos e alertas**, crie um orçamento e informe os
+   destinatários das notificações.
+4. Acompanhe uso e cobrança durante os testes.
+
+Alertas de orçamento enviam notificações; eles não interrompem as cobranças
+automaticamente. Cotas podem limitar requisições, mas não substituem o acompanhamento
+de faturamento nem garantem um limite financeiro exato.
+
+### Etapa 10: testar no aplicativo
+
+1. Abra o aplicativo em uma compilação com os módulos nativos necessários.
+2. Permita o acesso à localização.
+3. No campo de destino, digite um endereço e confira se aparecem sugestões.
+4. Selecione uma sugestão e confira se o destino foi preenchido.
+5. Com pelo menos um motorista cadastrado no banco, avance para a escolha da
+   corrida e confira a duração estimada e a rota.
+6. No Google Cloud, acompanhe as métricas das APIs para confirmar o recebimento
+   das requisições. As métricas podem demorar a aparecer.
+
+A busca testa Places; as estimativas e a rota testam Directions. Um mapa visível
+na tela, sozinho, não confirma que essas duas APIs estão funcionando.
+
+| Erro ou comportamento                           | O que conferir                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `REQUEST_DENIED`                                | Faturamento, API correta habilitada, chave do projeto correto, restrições e acesso aos serviços legados |
+| `API_KEY_INVALID` ou mensagem de chave inválida | Valor copiado, espaços extras e reinicialização do Expo                                                 |
+| `OVER_QUERY_LIMIT` ou `RESOURCE_EXHAUSTED`      | Cotas, consumo e situação do faturamento                                                                |
+| Sem sugestões de endereço                       | Places habilitada, conexão à internet, restrições e compatibilidade da biblioteca                       |
+| `ZERO_RESULTS`                                  | Origem/destino válidos e existência de uma rota para o modo de transporte utilizado                     |
+| Somente APIs novas disponíveis no Console       | Necessidade de migrar o código para Places API (New) e Routes API                                       |
+| Places funciona, mas não há estimativas         | Directions habilitada, localização disponível e motoristas cadastrados                                  |
+
+## 7. Conferir e iniciar o ambiente
 
 Após preencher as variáveis reais no `.env`, execute:
 
@@ -310,8 +487,7 @@ O comando confere a presença das variáveis e o formato do endereço da API. El
 faz chamadas aos provedores nem garante que as credenciais estejam válidas.
 O verificador também solicita `EXPO_PUBLIC_PLACES_API_KEY` e
 `EXPO_PUBLIC_DIRECTIONS_API_KEY`, pois o aplicativo usa Google para busca e rotas.
-Essas chaves devem ser habilitadas no Google Cloud separadamente: configurar os
-quatro serviços deste guia não habilita automaticamente as APIs do Google.
+Siga a seção 6 deste guia para habilitar as APIs compatíveis no Google Cloud e criar as chaves.
 
 Para executar no computador, mantenha:
 
@@ -337,7 +513,7 @@ docker compose up -d --force-recreate app
 
 Para instruções de acesso ao banco e ao Adminer, consulte o [guia Docker](docker.md).
 
-## 7. Problemas comuns
+## 8. Problemas comuns
 
 | Sintoma                                              | O que conferir                                                            |
 | ---------------------------------------------------- | ------------------------------------------------------------------------- |
