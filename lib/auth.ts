@@ -1,33 +1,37 @@
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 import { getAuthErrorMessage } from "@/lib/errors";
 import { fetchAPI } from "@/lib/fetch";
 
-export const tokenCache = {
-  async getToken(key: string) {
-    try {
-      const item = await SecureStore.getItemAsync(key);
-      if (item) {
-        console.log(`${key} foi utilizada 🔐 \n`);
-      } else {
-        console.log("Nenhum valor armazenado para a chave: " + key);
+export const tokenCache =
+  Platform.OS === "web"
+    ? {
+        async getToken(key: string) {
+          return localStorage.getItem(key);
+        },
+        async saveToken(key: string, value: string) {
+          localStorage.setItem(key, value);
+        },
       }
-      return item;
-    } catch (error) {
-      console.error("Erro ao obter um item do SecureStore: ", error);
-      await SecureStore.deleteItemAsync(key);
-      return null;
-    }
-  },
-  async saveToken(key: string, value: string) {
-    try {
-      return SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
-    }
-  },
-};
+    : {
+        async getToken(key: string) {
+          try {
+            return await SecureStore.getItemAsync(key);
+          } catch (error) {
+            await SecureStore.deleteItemAsync(key);
+            return null;
+          }
+        },
+        async saveToken(key: string, value: string) {
+          try {
+            return SecureStore.setItemAsync(key, value);
+          } catch (err) {
+            return;
+          }
+        },
+      };
 
 export const googleOAuth = async (startOAuthFlow: any) => {
   try {
