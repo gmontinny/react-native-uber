@@ -45,7 +45,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey} clerkJSVersion="6">
       <ClerkLoaded>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />

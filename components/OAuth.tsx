@@ -1,5 +1,7 @@
 import { useOAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/clerk-expo";
 import { router } from "expo-router";
+import { useEffect } from "react";
 import { Alert, Image, Text, View } from "react-native";
 
 import CustomButton from "@/components/CustomButton";
@@ -8,19 +10,30 @@ import { googleOAuth } from "@/lib/auth";
 
 const OAuth = () => {
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const { isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace("/(root)/(tabs)/home");
+    }
+  }, [isSignedIn]);
 
   const handleGoogleSignIn = async () => {
     const result = await googleOAuth(startOAuthFlow);
 
-    if (result.code === "session_exists") {
-      Alert.alert(
-        "Sucesso",
-        "Você já está conectado. Redirecionando para a tela inicial.",
-      );
+    if (result.success) {
       router.replace("/(root)/(tabs)/home");
+      return;
     }
 
-    Alert.alert(result.success ? "Sucesso" : "Erro", result.message);
+    if (result.code === "session_exists") {
+      router.replace("/(root)/(tabs)/home");
+      return;
+    }
+
+    if (result.message) {
+      Alert.alert("Erro", result.message);
+    }
   };
 
   return (
