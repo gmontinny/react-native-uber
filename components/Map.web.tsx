@@ -3,8 +3,10 @@ import { ActivityIndicator, View } from "react-native";
 
 import { useLocationStore } from "@/store";
 
-// Only use Google when a key configured for Maps Embed API is provided.
-const mapsEmbedApiKey = process.env.EXPO_PUBLIC_MAPS_EMBED_API_KEY;
+// A dedicated Embed key is optional; the Places key may also allow Maps Embed API.
+const mapsEmbedApiKey =
+  process.env.EXPO_PUBLIC_MAPS_EMBED_API_KEY ||
+  process.env.EXPO_PUBLIC_PLACES_API_KEY;
 
 const Map = () => {
   const {
